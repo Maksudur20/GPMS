@@ -315,8 +315,8 @@ CHARGE_PER_1000=12.50
 
 ## Exchange Rate API
 - **Provider**: exchangerate-api.com
-- **API Key**: 6c6dc34bebbfed4f5eeec80e
-- **Endpoint**: https://v6.exchangerate-api.com/v6/6c6dc34bebbfed4f5eeec80e/latest/USD
+- **API Key**: [CONFIGURED_IN_.ENV]
+- **Endpoint**: https://v6.exchangerate-api.com/v6/[YOUR_API_KEY]/latest/USD
 
 ## Expected API Response
 
