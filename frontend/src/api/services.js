@@ -10,8 +10,16 @@ export const loginAdmin = (username, password) => {
 };
 
 // Order APIs
+export const previewOrder = (orderData) => {
+  return api.post('/orders/preview', orderData);
+};
+
 export const createOrder = (orderData) => {
   return api.post('/orders', orderData);
+};
+
+export const updateOrderStatus = (id, status) => {
+  return api.patch(`/orders/${id}/status`, { status });
 };
 
 export const getOrders = () => {

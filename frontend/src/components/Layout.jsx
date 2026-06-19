@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useApi.js';
 
 export const Layout = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -15,21 +16,21 @@ export const Layout = ({ children }) => {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-800 text-white transition-all duration-300`}>
+      <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-800 text-white transition-all duration-300 relative`}>
         <div className="p-4 border-b border-gray-700">
           <h1 className={`${sidebarOpen ? 'text-xl' : 'text-xs'} font-bold`}>GPMS</h1>
         </div>
 
         <nav className="mt-4 space-y-2">
-          <NavLink href="/" label="Dashboard" open={sidebarOpen} icon="📊" />
-          <NavLink href="/orders" label="Orders" open={sidebarOpen} icon="📦" />
-          <NavLink href="/settings" label="Settings" open={sidebarOpen} icon="⚙️" />
+          <NavLink href="/" label="Dashboard" open={sidebarOpen} icon="📊" active={location.pathname === '/'} onClick={() => navigate('/')} />
+          <NavLink href="/orders" label="Orders" open={sidebarOpen} icon="📦" active={location.pathname === '/orders'} onClick={() => navigate('/orders')} />
+          <NavLink href="/settings" label="Settings" open={sidebarOpen} icon="⚙️" active={location.pathname === '/settings'} onClick={() => navigate('/settings')} />
         </nav>
 
         <div className="absolute bottom-4 left-0 right-0 px-4">
           <button
             onClick={handleLogout}
-            className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-sm font-medium transition"
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-sm font-medium transition"
           >
             {sidebarOpen ? 'Logout' : '🚪'}
           </button>
@@ -60,14 +61,15 @@ export const Layout = ({ children }) => {
   );
 };
 
-const NavLink = ({ href, label, open, icon }) => {
+const NavLink = ({ label, open, icon, active, onClick }) => {
   return (
-    <a
-      href={href}
-      className="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 rounded transition"
+    <button
+      onClick={onClick}
+      className={`flex items-center w-full px-4 py-2 rounded transition ${active ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700'}`}
     >
       <span className="text-xl">{icon}</span>
       {open && <span className="ml-3">{label}</span>}
-    </a>
+    </button>
   );
 };
+

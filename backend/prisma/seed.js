@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -8,18 +9,21 @@ export const seedDatabase = async () => {
 
     // Create default admin
     const existingAdmin = await prisma.admin.findUnique({
-      where: { username: 'admin' }
+      where: { username: 'sium' }
     });
 
     if (!existingAdmin) {
+      const hashedPassword = await bcrypt.hash('sium2000', 10);
       await prisma.admin.create({
         data: {
-          username: 'admin',
-          email: 'admin@gpms.local',
-          password: '$2a$10$YourHashedPasswordHere' // Use bcrypt in production
+          username: 'sium',
+          email: 'sium@gpms.local',
+          password: hashedPassword
         }
       });
-      console.log('✅ Default admin created');
+      console.log('✅ Default admin created (username: sium)');
+    } else {
+      console.log('ℹ️ Admin "sium" already exists, skipping');
     }
 
     // Create default settings
@@ -49,3 +53,4 @@ export const seedDatabase = async () => {
 if (process.argv[1].endsWith('seed.js')) {
   seedDatabase();
 }
+

@@ -41,7 +41,7 @@ export const Card = ({ children, title, className = '' }) => {
 
 export const Table = ({ headers, rows }) => {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto overflow-y-visible" style={{ overflow: 'visible' }}>
       <table className="w-full">
         <thead>
           <tr className="border-b border-gray-200">

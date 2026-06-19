@@ -1,13 +1,36 @@
 import React, { useState } from 'react';
-import { createOrder } from '../api/services.js';
+import { previewOrder, createOrder } from '../api/services.js';
 import { Button } from './Common.jsx';
+
+const CURRENCIES = [
+  { code: 'INR', name: 'Indian Rupee (₹)' },
+  { code: 'USD', name: 'US Dollar ($)' },
+  { code: 'EUR', name: 'Euro (€)' },
+  { code: 'GBP', name: 'British Pound (£)' },
+  { code: 'TRY', name: 'Turkish Lira (₺)' },
+  { code: 'ARS', name: 'Argentine Peso (ARS)' },
+  { code: 'RUB', name: 'Russian Ruble (₽)' },
+  { code: 'BRL', name: 'Brazilian Real (R$)' },
+  { code: 'KZT', name: 'Kazakh Tenge (₸)' },
+  { code: 'PKR', name: 'Pakistani Rupee (PKR)' },
+  { code: 'MYR', name: 'Malaysian Ringgit (RM)' },
+  { code: 'IDR', name: 'Indonesian Rupiah (Rp)' },
+  { code: 'PHP', name: 'Philippine Peso (₱)' },
+  { code: 'THB', name: 'Thai Baht (฿)' },
+  { code: 'VND', name: 'Vietnamese Dong (₫)' },
+  { code: 'CNY', name: 'Chinese Yuan (¥)' },
+  { code: 'JPY', name: 'Japanese Yen (¥)' },
+  { code: 'KRW', name: 'South Korean Won (₩)' },
+];
 
 export const OrderForm = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
     gameName: '',
     steamPriceInr: '',
-    customerPrice: ''
+    customerPrice: '',
+    currency: 'INR'
   });
+  const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -19,14 +42,29 @@ export const OrderForm = ({ onSuccess }) => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handlePreview = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
+      const response = await previewOrder(formData);
+      setPreview(response.data.preview);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to calculate preview');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
       await createOrder(formData);
-      setFormData({ gameName: '', steamPriceInr: '', customerPrice: '' });
+      setFormData({ gameName: '', steamPriceInr: '', customerPrice: '', currency: formData.currency });
+      setPreview(null);
       if (onSuccess) onSuccess();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create order');
@@ -35,10 +73,73 @@ export const OrderForm = ({ onSuccess }) => {
     }
   };
 
+  const handleCancelPreview = () => {
+    setPreview(null);
+  };
+
+  // Show preview/overview
+  if (preview) {
+    return (
+      <div className="space-y-4">
+        {error && <div className="text-red-500 text-sm">{error}</div>}
+
+        <h3 className="text-lg font-semibold text-gray-800">Order Overview</h3>
+        <p className="text-sm text-gray-500">Review the details below before confirming.</p>
+
+        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="text-gray-500">Game Name</div>
+            <div className="font-medium text-gray-800">{formData.gameName}</div>
+
+            <div className="text-gray-500">Steam Price ({preview.currency})</div>
+            <div className="font-medium text-gray-800">{preview.steamPrice}</div>
+
+            <div className="text-gray-500">Exchange Rate ({preview.currency} → BDT)</div>
+            <div className="font-medium text-gray-800">{preview.exchangeRate}</div>
+
+            <div className="border-t col-span-2 my-1"></div>
+
+            <div className="text-gray-500">Converted (BDT)</div>
+            <div className="font-medium text-gray-800">৳ {preview.convertedBdt.toFixed(2)}</div>
+
+            <div className="text-gray-500">Rounded (BDT)</div>
+            <div className="font-medium text-gray-800">৳ {preview.roundedBdt.toFixed(2)}</div>
+
+            <div className="text-gray-500">Payment Charge</div>
+            <div className="font-medium text-gray-800">৳ {preview.paymentCharge.toFixed(2)}</div>
+
+            <div className="text-gray-500">Final Cost</div>
+            <div className="font-medium text-gray-800 text-blue-600">৳ {preview.finalCost.toFixed(2)}</div>
+
+            <div className="border-t col-span-2 my-1"></div>
+
+            <div className="text-gray-500">Customer Price</div>
+            <div className="font-medium text-gray-800">৳ {preview.customerPrice.toFixed(2)}</div>
+
+            <div className="text-gray-500 font-semibold">Profit</div>
+            <div className={`font-bold text-lg ${preview.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ৳ {preview.profit.toFixed(2)}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <Button onClick={handleConfirm} disabled={loading}>
+            {loading ? 'Creating...' : 'Confirm & Create Order'}
+          </Button>
+          <Button variant="secondary" onClick={handleCancelPreview} disabled={loading}>
+            Go Back & Edit
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show form
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handlePreview} className="space-y-4">
       {error && <div className="text-red-500 text-sm">{error}</div>}
-      
+
       <div>
         <label className="block text-sm font-medium text-gray-700">Game Name</label>
         <input
@@ -53,7 +154,21 @@ export const OrderForm = ({ onSuccess }) => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Steam Price (INR)</label>
+        <label className="block text-sm font-medium text-gray-700">Currency</label>
+        <select
+          name="currency"
+          value={formData.currency}
+          onChange={handleChange}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
+        >
+          {CURRENCIES.map(c => (
+            <option key={c.code} value={c.code}>{c.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Steam Price ({formData.currency})</label>
         <input
           type="number"
           name="steamPriceInr"
@@ -61,7 +176,7 @@ export const OrderForm = ({ onSuccess }) => {
           onChange={handleChange}
           required
           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-          placeholder="Enter price in INR"
+          placeholder={`Enter price in ${formData.currency}`}
           step="0.01"
         />
       </div>
@@ -81,7 +196,7 @@ export const OrderForm = ({ onSuccess }) => {
       </div>
 
       <Button type="submit" disabled={loading}>
-        {loading ? 'Creating...' : 'Create Order'}
+        {loading ? 'Calculating...' : 'Preview Order'}
       </Button>
     </form>
   );

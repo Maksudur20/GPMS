@@ -1,18 +1,27 @@
 import axios from 'axios';
 
-export const fetchExchangeRate = async () => {
+export const fetchExchangeRate = async (sourceCurrency = 'INR', apiUrl = null) => {
   try {
-    const response = await axios.get(process.env.CURRENCY_API_URL);
+    const url = apiUrl || process.env.CURRENCY_API_URL;
+    const response = await axios.get(url);
     const rates = response.data.conversion_rates;
-    return rates.BDT || 1.30; // Default fallback rate
+    const bdtRate = rates.BDT;
+    const sourceRate = rates[sourceCurrency.toUpperCase()];
+
+    if (!sourceRate || !bdtRate) {
+      throw new Error(`Currency ${sourceCurrency} not found`);
+    }
+
+    // Convert: sourceCurrency → USD → BDT
+    return bdtRate / sourceRate;
   } catch (error) {
     console.error('Error fetching exchange rate:', error);
     return 1.30; // Default fallback rate
   }
 };
 
-export const convertInrToBdt = (inrAmount, exchangeRate) => {
-  return inrAmount * exchangeRate;
+export const convertToBdt = (amount, exchangeRate) => {
+  return amount * exchangeRate;
 };
 
 export const roundAmount = (amount) => {
