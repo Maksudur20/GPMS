@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admins")
+}
+
+model Order {
+  id              String   @id @default(uuid())
+  gameName        String
+  steamPriceInr   Decimal  @db.Decimal(10, 2)
+  exchangeRate    Decimal  @db.Decimal(10, 4)
+  convertedBdt    Decimal  @db.Decimal(10, 2)
+  roundedBdt      Decimal  @db.Decimal(10, 2)
+  paymentCharge   Decimal  @db.Decimal(10, 2)
+  finalCost       Decimal  @db.Decimal(10, 2)
+  customerPrice   Decimal  @db.Decimal(10, 2)
+  profit          Decimal  @db.Decimal(10, 2)
+  status          String   @default("Pending")
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("orders")
+}
+
+model Settings {
+  id              String   @id @default(uuid())
+  currencyApiUrl  String
+  chargePer1000   Decimal  @db.Decimal(10, 4) @default(12.50)
+  minProfit       Decimal  @db.Decimal(10, 2) @default(50)
+  maxProfit       Decimal  @db.Decimal(10, 2) @default(100)
+  updatedAt       DateTime @updatedAt
+
+  @@map("settings")
+}
