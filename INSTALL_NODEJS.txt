@@ -1,0 +1,16 @@
+# Copy and paste this command into PowerShell to install Node.js automatically:
+
+powershell -ExecutionPolicy Bypass -Command "& {iex (New-Object System.Net.WebClient).DownloadString('https://nodejs.org/dist/v20.12.0/node-v20.12.0-x64.msi'); Start-Process msiexec.exe -ArgumentList '/i node-v20.12.0-x64.msi /quiet /norestart' -Wait; Write-Host 'Node.js installed! Restart PowerShell and verify with: node --version'}"
+
+# OR run the local script:
+
+d:\GPMS\install-nodejs.ps1
+
+# OR use winget (Windows 11+):
+
+winget install OpenJS.NodeJS
+
+# After installation, verify:
+
+node --version
+npm --version
