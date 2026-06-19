@@ -1,11 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import {
   fetchExchangeRate,
-  convertToBdt,
-  roundAmount,
-  calculatePaymentCharge,
-  calculateFinalCost,
-  calculateProfit
+  calculateOrder
 } from '../utils/currency.js';
 
 const prisma = new PrismaClient();
@@ -16,6 +12,7 @@ const getDbSettings = async () => {
   return {
     currencyApiUrl: settings?.currencyApiUrl || process.env.CURRENCY_API_URL,
     chargePer1000: settings ? parseFloat(settings.chargePer1000) : (parseFloat(process.env.CHARGE_PER_1000) || 12.50),
+    steamFeePercent: settings ? parseFloat(settings.steamFeePercent) : 3.65,
     minProfit: settings ? parseFloat(settings.minProfit) : 50,
     maxProfit: settings ? parseFloat(settings.maxProfit) : 100
   };
@@ -32,23 +29,27 @@ export const previewOrder = async (req, res) => {
 
     const dbSettings = await getDbSettings();
     const exchangeRate = await fetchExchangeRate(sourceCurrency, dbSettings.currencyApiUrl);
-    const convertedBdt = convertToBdt(steamPriceInr, exchangeRate);
-    const roundedBdt = roundAmount(convertedBdt);
-    const paymentCharge = calculatePaymentCharge(roundedBdt, dbSettings.chargePer1000);
-    const finalCost = calculateFinalCost(roundedBdt, paymentCharge);
-    const profit = calculateProfit(customerPrice, finalCost);
+    const calc = calculateOrder(
+      parseFloat(steamPriceInr),
+      exchangeRate,
+      dbSettings.steamFeePercent,
+      dbSettings.chargePer1000,
+      parseFloat(customerPrice)
+    );
 
     res.json({
       preview: {
         currency: sourceCurrency,
-        steamPrice: parseFloat(steamPriceInr),
+        gamePrice: parseFloat(steamPriceInr),
         exchangeRate: parseFloat(exchangeRate.toFixed(4)),
-        convertedBdt: parseFloat(convertedBdt.toFixed(2)),
-        roundedBdt: parseFloat(roundedBdt.toFixed(2)),
-        paymentCharge: parseFloat(paymentCharge.toFixed(2)),
-        finalCost: parseFloat(finalCost.toFixed(2)),
+        baseCost: calc.baseCost,
+        steamFeePercent: dbSettings.steamFeePercent,
+        steamFeeAmount: calc.steamFeeAmount,
+        steamCost: calc.steamCost,
+        paymentCharge: calc.paymentCharge,
+        finalCost: calc.finalCost,
         customerPrice: parseFloat(customerPrice),
-        profit: parseFloat(profit.toFixed(2))
+        profit: calc.profit
       }
     });
   } catch (error) {
@@ -87,36 +88,36 @@ export const createOrder = async (req, res) => {
     const { gameName, steamPriceInr, customerPrice, currency } = req.body;
     const sourceCurrency = currency || 'INR';
 
-    // Validation
     if (!gameName || !steamPriceInr || !customerPrice) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Fetch settings from DB
     const dbSettings = await getDbSettings();
-
-    // Fetch exchange rate
     const exchangeRate = await fetchExchangeRate(sourceCurrency, dbSettings.currencyApiUrl);
+    const calc = calculateOrder(
+      parseFloat(steamPriceInr),
+      exchangeRate,
+      dbSettings.steamFeePercent,
+      dbSettings.chargePer1000,
+      parseFloat(customerPrice)
+    );
 
-    // Calculations
-    const convertedBdt = convertToBdt(steamPriceInr, exchangeRate);
-    const roundedBdt = roundAmount(convertedBdt);
-    const paymentCharge = calculatePaymentCharge(roundedBdt, chargePer1000);
-    const finalCost = calculateFinalCost(roundedBdt, paymentCharge);
-    const profit = calculateProfit(customerPrice, finalCost);
-
-    // Create order
     const order = await prisma.order.create({
       data: {
         gameName,
+        currencyCode: sourceCurrency,
         steamPriceInr: parseFloat(steamPriceInr),
         exchangeRate: parseFloat(exchangeRate),
-        convertedBdt: parseFloat(convertedBdt),
-        roundedBdt: parseFloat(roundedBdt),
-        paymentCharge: parseFloat(paymentCharge),
-        finalCost: parseFloat(finalCost),
+        baseCost: calc.baseCost,
+        steamFeePercent: dbSettings.steamFeePercent,
+        steamFeeAmount: calc.steamFeeAmount,
+        steamCost: calc.steamCost,
+        convertedBdt: calc.baseCost,
+        roundedBdt: 0,
+        paymentCharge: calc.paymentCharge,
+        finalCost: calc.finalCost,
         customerPrice: parseFloat(customerPrice),
-        profit: parseFloat(profit),
+        profit: calc.profit,
         status: 'Pending'
       }
     });
@@ -180,30 +181,34 @@ export const updateOrder = async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Recalculate if prices changed
     let updateData = { gameName, status };
 
     if (steamPriceInr || customerPrice) {
-      const exchangeRate = order.exchangeRate;
-      const newSteamPrice = parseFloat(steamPriceInr) || order.steamPriceInr;
-      const newCustomerPrice = parseFloat(customerPrice) || order.customerPrice;
+      const dbSettings = await getDbSettings();
+      const exchangeRate = parseFloat(order.exchangeRate);
+      const newSteamPrice = parseFloat(steamPriceInr) || parseFloat(order.steamPriceInr);
+      const newCustomerPrice = parseFloat(customerPrice) || parseFloat(order.customerPrice);
 
-      const convertedBdt = convertToBdt(newSteamPrice, exchangeRate);
-      const roundedBdt = roundAmount(convertedBdt);
-      const chargePer1000 = parseFloat(process.env.CHARGE_PER_1000) || 12.50;
-      const paymentCharge = calculatePaymentCharge(roundedBdt, chargePer1000);
-      const finalCost = calculateFinalCost(roundedBdt, paymentCharge);
-      const profit = calculateProfit(newCustomerPrice, finalCost);
+      const calc = calculateOrder(
+        newSteamPrice,
+        exchangeRate,
+        dbSettings.steamFeePercent,
+        dbSettings.chargePer1000,
+        newCustomerPrice
+      );
 
       updateData = {
         ...updateData,
         steamPriceInr: newSteamPrice,
         customerPrice: newCustomerPrice,
-        convertedBdt: parseFloat(convertedBdt),
-        roundedBdt: parseFloat(roundedBdt),
-        paymentCharge: parseFloat(paymentCharge),
-        finalCost: parseFloat(finalCost),
-        profit: parseFloat(profit)
+        baseCost: calc.baseCost,
+        steamFeePercent: dbSettings.steamFeePercent,
+        steamFeeAmount: calc.steamFeeAmount,
+        steamCost: calc.steamCost,
+        convertedBdt: calc.baseCost,
+        paymentCharge: calc.paymentCharge,
+        finalCost: calc.finalCost,
+        profit: calc.profit
       };
     }
 

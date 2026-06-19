@@ -25,16 +25,23 @@ model Admin {
 model Order {
   id              String   @id @default(uuid())
   gameName        String
+  currencyCode    String   @default("INR")
   steamPriceInr   Decimal  @db.Decimal(10, 2)
   exchangeRate    Decimal  @db.Decimal(10, 4)
-  convertedBdt    Decimal  @db.Decimal(10, 2)
-  roundedBdt      Decimal  @db.Decimal(10, 2)
+  baseCost        Decimal  @db.Decimal(10, 2) @default(0)
+  steamFeePercent Decimal  @db.Decimal(5, 2)  @default(3.65)
+  steamFeeAmount  Decimal  @db.Decimal(10, 2) @default(0)
+  steamCost       Decimal  @db.Decimal(10, 2) @default(0)
+  convertedBdt    Decimal  @db.Decimal(10, 2) @default(0)
+  roundedBdt      Decimal  @db.Decimal(10, 2) @default(0)
   paymentCharge   Decimal  @db.Decimal(10, 2)
   finalCost       Decimal  @db.Decimal(10, 2)
   customerPrice   Decimal  @db.Decimal(10, 2)
   profit          Decimal  @db.Decimal(10, 2)
-  status          String   @default("Pending")
-  notes           String?
+  status                String    @default("Pending")
+  actualChargedAmount   Decimal?  @db.Decimal(10, 2)
+  calculatedFeePercent  Decimal?  @db.Decimal(5, 2)
+  notes                 String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -45,7 +52,9 @@ model Settings {
   id              String   @id @default(uuid())
   currencyApiUrl  String
   chargePer1000   Decimal  @db.Decimal(10, 4) @default(12.50)
-  minProfit       Decimal  @db.Decimal(10, 2) @default(50)
+  steamFeePercent  Decimal  @db.Decimal(5, 2)  @default(3.65)
+  steamFeeCalcMode String   @default("Fixed Percentage")
+  minProfit        Decimal  @db.Decimal(10, 2) @default(50)
   maxProfit       Decimal  @db.Decimal(10, 2) @default(100)
   updatedAt       DateTime @updatedAt
 

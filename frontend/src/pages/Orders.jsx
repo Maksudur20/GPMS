@@ -112,9 +112,11 @@ export const Orders = () => {
 
   const tableRows = orders.map(order => [
     order.gameName,
-    order.steamPriceInr,
-    Number(order.exchangeRate).toFixed(2),
-    formatCurrency(order.roundedBdt),
+    order.currencyCode || 'INR',
+    Number(order.steamPriceInr).toFixed(2),
+    formatCurrency(order.baseCost || order.convertedBdt),
+    formatCurrency(order.steamFeeAmount || 0),
+    formatCurrency(order.steamCost || 0),
     formatCurrency(order.finalCost),
     formatCurrency(order.customerPrice),
     formatCurrency(order.profit),
@@ -149,7 +151,7 @@ export const Orders = () => {
           <p className="text-gray-500">No orders found</p>
         ) : (
           <Table
-            headers={['Game', 'Price', 'Exchange', 'Rounded (BDT)', 'Final Cost', 'Customer Price', 'Profit', 'Status', 'Action']}
+            headers={['Game', 'Currency', 'Price', 'Base Cost', 'Steam Fee', 'Steam Cost', 'Final Cost', 'Customer Price', 'Profit', 'Status', 'Action']}
             rows={tableRows}
           />
         )}

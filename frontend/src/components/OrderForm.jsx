@@ -7,6 +7,10 @@ const CURRENCIES = [
   { code: 'USD', name: 'US Dollar ($)' },
   { code: 'EUR', name: 'Euro (€)' },
   { code: 'GBP', name: 'British Pound (£)' },
+  { code: 'AED', name: 'UAE Dirham (AED)' },
+  { code: 'SAR', name: 'Saudi Riyal (SAR)' },
+  { code: 'CAD', name: 'Canadian Dollar (C$)' },
+  { code: 'AUD', name: 'Australian Dollar (A$)' },
   { code: 'TRY', name: 'Turkish Lira (₺)' },
   { code: 'ARS', name: 'Argentine Peso (ARS)' },
   { code: 'RUB', name: 'Russian Ruble (₽)' },
@@ -91,27 +95,33 @@ export const OrderForm = ({ onSuccess }) => {
             <div className="text-gray-500">Game Name</div>
             <div className="font-medium text-gray-800">{formData.gameName}</div>
 
-            <div className="text-gray-500">Steam Price ({preview.currency})</div>
-            <div className="font-medium text-gray-800">{preview.steamPrice}</div>
+            <div className="text-gray-500">Game Price</div>
+            <div className="font-medium text-gray-800">{preview.gamePrice} {preview.currency}</div>
+
+            <div className="text-gray-500">Currency Code</div>
+            <div className="font-medium text-gray-800">{preview.currency}</div>
 
             <div className="text-gray-500">Exchange Rate ({preview.currency} → BDT)</div>
             <div className="font-medium text-gray-800">{preview.exchangeRate}</div>
 
-            <div className="border-t col-span-2 my-1"></div>
+            <div className="border-t col-span-2 my-1 border-gray-300"></div>
 
-            <div className="text-gray-500">Converted (BDT)</div>
-            <div className="font-medium text-gray-800">৳ {preview.convertedBdt.toFixed(2)}</div>
+            <div className="text-gray-500">Base Cost</div>
+            <div className="font-medium text-gray-800">৳ {preview.baseCost.toFixed(2)}</div>
 
-            <div className="text-gray-500">Rounded (BDT)</div>
-            <div className="font-medium text-gray-800">৳ {preview.roundedBdt.toFixed(2)}</div>
+            <div className="text-gray-500">Steam/Bank Fee ({preview.steamFeePercent}%)</div>
+            <div className="font-medium text-gray-800">৳ {preview.steamFeeAmount.toFixed(2)}</div>
+
+            <div className="text-gray-500">Steam Cost</div>
+            <div className="font-medium text-blue-600">৳ {preview.steamCost.toFixed(2)}</div>
 
             <div className="text-gray-500">Payment Charge</div>
             <div className="font-medium text-gray-800">৳ {preview.paymentCharge.toFixed(2)}</div>
 
             <div className="text-gray-500">Final Cost</div>
-            <div className="font-medium text-gray-800 text-blue-600">৳ {preview.finalCost.toFixed(2)}</div>
+            <div className="font-medium text-blue-700 font-bold">৳ {preview.finalCost.toFixed(2)}</div>
 
-            <div className="border-t col-span-2 my-1"></div>
+            <div className="border-t col-span-2 my-1 border-gray-300"></div>
 
             <div className="text-gray-500">Customer Price</div>
             <div className="font-medium text-gray-800">৳ {preview.customerPrice.toFixed(2)}</div>
@@ -168,7 +178,7 @@ export const OrderForm = ({ onSuccess }) => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Steam Price ({formData.currency})</label>
+        <label className="block text-sm font-medium text-gray-700">Game Price ({formData.currency})</label>
         <input
           type="number"
           name="steamPriceInr"

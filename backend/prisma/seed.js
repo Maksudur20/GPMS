@@ -34,6 +34,8 @@ export const seedDatabase = async () => {
         data: {
           currencyApiUrl: process.env.CURRENCY_API_URL || 'https://v6.exchangerate-api.com/v6/your_key/latest/USD',
           chargePer1000: 12.50,
+          steamFeePercent: 3.65,
+          steamFeeCalcMode: 'Fixed Percentage',
           minProfit: 50,
           maxProfit: 100
         }
