@@ -84,13 +84,16 @@ export const calculateOrder = (gamePrice, exchangeRate, steamFeePercent, chargeP
   const finalCost = calculateFinalCost(bkashSendAmount, paymentCharge);
   const profit = calculateProfit(customerPrice, finalCost);
 
+  // Use a reliable rounding function to avoid JS floating point inaccuracies like 2.975.toFixed(2) -> '2.97'
+  const round2 = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
+
   return {
-    baseCost: parseFloat(baseCost.toFixed(2)),
-    steamFeeAmount: parseFloat(steamFeeAmount.toFixed(2)),
-    steamCost: parseFloat(steamCost.toFixed(2)),
-    bkashSendAmount: parseFloat(bkashSendAmount.toFixed(2)),
-    paymentCharge: parseFloat(paymentCharge.toFixed(2)),
-    finalCost: parseFloat(finalCost.toFixed(2)),
-    profit: parseFloat(profit.toFixed(2))
+    baseCost: round2(baseCost),
+    steamFeeAmount: round2(steamFeeAmount),
+    steamCost: round2(steamCost),
+    bkashSendAmount: round2(bkashSendAmount),
+    paymentCharge: round2(paymentCharge),
+    finalCost: round2(finalCost),
+    profit: round2(profit)
   };
 };
