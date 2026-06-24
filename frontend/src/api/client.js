@@ -18,4 +18,20 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Add response interceptor to handle 401 errors globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Clear authentication data
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      
+      // Dispatch event so App.jsx can update state and redirect to login
+      window.dispatchEvent(new Event('auth-change'));
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
