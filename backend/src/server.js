@@ -43,6 +43,10 @@ app.use((req, res) => {
 // Error Handler (must be last)
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  logger.info(`🚀 Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    logger.info(`🚀 Server running on port ${PORT}`);
+  });
+}
+
+export default app;
