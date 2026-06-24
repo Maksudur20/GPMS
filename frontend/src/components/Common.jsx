@@ -41,8 +41,8 @@ export const Card = ({ children, title, className = '' }) => {
 
 export const Table = ({ headers, rows }) => {
   return (
-    <div className="overflow-x-auto overflow-y-visible" style={{ overflow: 'visible' }}>
-      <table className="w-full">
+    <div className="overflow-x-auto min-h-[300px]">
+      <table className="w-full whitespace-nowrap text-sm">
         <thead>
           <tr className="border-b border-gray-200">
             {headers.map((header, idx) => (

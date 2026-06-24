@@ -30,6 +30,7 @@ const CURRENCIES = [
 export const OrderForm = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
     gameName: '',
+    customerName: '',
     steamPriceInr: '',
     customerPrice: '',
     currency: 'INR'
@@ -67,7 +68,7 @@ export const OrderForm = ({ onSuccess }) => {
 
     try {
       await createOrder(formData);
-      setFormData({ gameName: '', steamPriceInr: '', customerPrice: '', currency: formData.currency });
+      setFormData({ gameName: '', customerName: '', steamPriceInr: '', customerPrice: '', currency: formData.currency });
       setPreview(null);
       if (onSuccess) onSuccess();
     } catch (err) {
@@ -92,8 +93,14 @@ export const OrderForm = ({ onSuccess }) => {
 
         <div className="bg-gray-50 rounded-lg p-4 space-y-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="text-gray-500">Order Date & Time</div>
+            <div className="font-medium text-gray-800">{new Date().toLocaleString('en-BD', { dateStyle: 'medium', timeStyle: 'short' })}</div>
+
             <div className="text-gray-500">Game Name</div>
             <div className="font-medium text-gray-800">{formData.gameName}</div>
+
+            <div className="text-gray-500">Customer Name</div>
+            <div className="font-medium text-gray-800">{formData.customerName || '—'}</div>
 
             <div className="text-gray-500">Game Price</div>
             <div className="font-medium text-gray-800">{preview.gamePrice} {preview.currency}</div>
@@ -102,7 +109,7 @@ export const OrderForm = ({ onSuccess }) => {
             <div className="font-medium text-gray-800">{preview.currency}</div>
 
             <div className="text-gray-500">Exchange Rate ({preview.currency} → BDT)</div>
-            <div className="font-medium text-gray-800">{preview.exchangeRate}</div>
+            <div className="font-medium text-gray-800">{Number(preview.exchangeRate).toFixed(2)}</div>
 
             <div className="border-t col-span-2 my-1 border-gray-300"></div>
 
@@ -112,10 +119,13 @@ export const OrderForm = ({ onSuccess }) => {
             <div className="text-gray-500">Steam/Bank Fee ({preview.steamFeePercent}%)</div>
             <div className="font-medium text-gray-800">৳ {preview.steamFeeAmount.toFixed(2)}</div>
 
-            <div className="text-gray-500">Steam Cost</div>
-            <div className="font-medium text-blue-600">৳ {preview.steamCost.toFixed(2)}</div>
+            <div className="text-gray-500">Card Amount</div>
+            <div className="font-medium text-gray-800">৳ {preview.steamCost.toFixed(2)}</div>
 
-            <div className="text-gray-500">Payment Charge</div>
+            <div className="text-gray-500">bKash Send Amount</div>
+            <div className="font-medium text-blue-600">৳ {preview.bkashSendAmount.toFixed(2)}</div>
+
+            <div className="text-gray-500">bKash Charge</div>
             <div className="font-medium text-gray-800">৳ {preview.paymentCharge.toFixed(2)}</div>
 
             <div className="text-gray-500">Final Cost</div>
@@ -160,6 +170,18 @@ export const OrderForm = ({ onSuccess }) => {
           required
           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
           placeholder="Enter game name"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Customer Name</label>
+        <input
+          type="text"
+          name="customerName"
+          value={formData.customerName}
+          onChange={handleChange}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+          placeholder="Enter customer name (optional)"
         />
       </div>
 

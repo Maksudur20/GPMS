@@ -7,69 +7,38 @@ import { Login } from './pages/Login.jsx';
 import { Layout } from './components/Layout.jsx';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('token'));
 
+  // Listen for logout events from anywhere in the app
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
-    setLoading(false);
+    const handleAuthChange = () => {
+      setIsAuthenticated(!!localStorage.getItem('token'));
+    };
+    window.addEventListener('auth-change', handleAuthChange);
+    return () => window.removeEventListener('auth-change', handleAuthChange);
   }, []);
 
-  if (loading) return <div className="text-center py-10">Loading...</div>;
+  if (isAuthenticated) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route path="/" element={<Layout><Dashboard /></Layout>} />
+          <Route path="/orders" element={<Layout><Orders /></Layout>} />
+          <Route path="/settings" element={<Layout><Settings /></Layout>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    );
+  }
 
   return (
     <Router>
       <Routes>
-        <Route
-          path="/login"
-          element={
-            isAuthenticated ? (
-              <Navigate to="/" />
-            ) : (
-              <Login onLoginSuccess={() => setIsAuthenticated(true)} />
-            )
-          }
-        />
-
-        {isAuthenticated ? (
-          <Route
-            path="/"
-            element={
-              <Layout>
-                <Dashboard />
-              </Layout>
-            }
-          />
-        ) : (
-          <Route path="/" element={<Navigate to="/login" />} />
-        )}
-
-        {isAuthenticated ? (
-          <Route
-            path="/orders"
-            element={
-              <Layout>
-                <Orders />
-              </Layout>
-            }
-          />
-        ) : (
-          <Route path="/orders" element={<Navigate to="/login" />} />
-        )}
-
-        {isAuthenticated ? (
-          <Route
-            path="/settings"
-            element={
-              <Layout>
-                <Settings />
-              </Layout>
-            }
-          />
-        ) : (
-          <Route path="/settings" element={<Navigate to="/login" />} />
-        )}
+        <Route path="/login" element={<Login onLoginSuccess={() => {
+          setIsAuthenticated(true);
+        }} />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
   );

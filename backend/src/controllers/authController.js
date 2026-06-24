@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma.js';
 import { hashPassword, comparePasswords, generateToken } from '../utils/cryptography.js';
 
-const prisma = new PrismaClient();
 
 export const register = async (req, res) => {
   try {
@@ -77,6 +76,32 @@ export const login = async (req, res) => {
       admin: { id: admin.id, username: admin.username, email: admin.email },
       token
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const verifyPassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
+    }
+
+    const admin = await prisma.admin.findUnique({
+      where: { id: req.admin.id }
+    });
+
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin not found' });
+    }
+
+    const isValidPassword = await comparePasswords(password, admin.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Incorrect password' });
+    }
+
+    res.json({ success: true, message: 'Password verified' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -10,7 +10,7 @@ export const Layout = ({ children }) => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    window.dispatchEvent(new Event('auth-change'));
   };
 
   return (
@@ -38,7 +38,7 @@ export const Layout = ({ children }) => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <div className="bg-white shadow px-6 py-4 flex items-center justify-between">
           <button

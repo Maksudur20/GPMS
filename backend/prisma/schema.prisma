@@ -24,7 +24,10 @@ model Admin {
 
 model Order {
   id              String   @id @default(uuid())
+  productId       String?  @unique
+  invoiceNumber   String?
   gameName        String
+  customerName    String   @default("")
   currencyCode    String   @default("INR")
   steamPriceInr   Decimal  @db.Decimal(10, 2)
   exchangeRate    Decimal  @db.Decimal(10, 4)
@@ -34,6 +37,7 @@ model Order {
   steamCost       Decimal  @db.Decimal(10, 2) @default(0)
   convertedBdt    Decimal  @db.Decimal(10, 2) @default(0)
   roundedBdt      Decimal  @db.Decimal(10, 2) @default(0)
+  bkashSendAmount Decimal  @db.Decimal(10, 2) @default(0)
   paymentCharge   Decimal  @db.Decimal(10, 2)
   finalCost       Decimal  @db.Decimal(10, 2)
   customerPrice   Decimal  @db.Decimal(10, 2)

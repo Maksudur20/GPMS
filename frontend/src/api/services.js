@@ -9,6 +9,10 @@ export const loginAdmin = (username, password) => {
   return api.post('/auth/login', { username, password });
 };
 
+export const verifyAdminPassword = (password) => {
+  return api.post('/auth/verify-password', { password });
+};
+
 // Order APIs
 export const previewOrder = (orderData) => {
   return api.post('/orders/preview', orderData);
@@ -34,8 +38,8 @@ export const updateOrder = (id, orderData) => {
   return api.put(`/orders/${id}`, orderData);
 };
 
-export const deleteOrder = (id) => {
-  return api.delete(`/orders/${id}`);
+export const deleteOrder = (id, password) => {
+  return api.delete(`/orders/${id}`, { data: { password } });
 };
 
 // Dashboard APIs

@@ -1,10 +1,29 @@
 import axios from 'axios';
 
+// Cache exchange rates for 30 minutes to prevent slow API calls on every preview
+const rateCache = {
+  data: null,
+  lastFetch: 0,
+  TTL: 30 * 60 * 1000 // 30 minutes
+};
+
 export const fetchExchangeRate = async (sourceCurrency = 'INR', apiUrl = null) => {
   try {
-    const url = apiUrl || process.env.CURRENCY_API_URL;
-    const response = await axios.get(url);
-    const rates = response.data.conversion_rates;
+    const now = Date.now();
+    let rates;
+
+    if (rateCache.data && now - rateCache.lastFetch < rateCache.TTL) {
+      rates = rateCache.data;
+    } else {
+      const url = apiUrl || process.env.CURRENCY_API_URL;
+      const response = await axios.get(url);
+      rates = response.data.conversion_rates;
+      
+      // Update cache
+      rateCache.data = rates;
+      rateCache.lastFetch = now;
+    }
+
     const bdtRate = rates.BDT;
     const sourceRate = rates[sourceCurrency.toUpperCase()];
 
@@ -35,17 +54,22 @@ export const calculateSteamCost = (baseCost, steamFeeAmount) => {
   return baseCost + steamFeeAmount;
 };
 
-// Step 4: Payment Charge = steamCost × (chargePer1000 / 1000)
-export const calculatePaymentCharge = (steamCost, chargePer1000) => {
-  return steamCost * (chargePer1000 / 1000);
+// Step 4: bKash Send Amount = Math.ceil(steamCost)
+export const calculateBkashSendAmount = (steamCost) => {
+  return Math.ceil(steamCost);
 };
 
-// Step 5: Final Cost = steamCost + paymentCharge
-export const calculateFinalCost = (steamCost, paymentCharge) => {
-  return steamCost + paymentCharge;
+// Step 5: Payment Charge = bkashSendAmount × (chargePer1000 / 1000)
+export const calculatePaymentCharge = (bkashSendAmount, chargePer1000) => {
+  return bkashSendAmount * (chargePer1000 / 1000);
 };
 
-// Step 6: Profit = customerPrice - finalCost
+// Step 6: Final Cost = bkashSendAmount + paymentCharge
+export const calculateFinalCost = (bkashSendAmount, paymentCharge) => {
+  return bkashSendAmount + paymentCharge;
+};
+
+// Step 7: Profit = customerPrice - finalCost
 export const calculateProfit = (customerPrice, finalCost) => {
   return customerPrice - finalCost;
 };
@@ -54,15 +78,17 @@ export const calculateProfit = (customerPrice, finalCost) => {
 export const calculateOrder = (gamePrice, exchangeRate, steamFeePercent, chargePer1000, customerPrice) => {
   const baseCost = calculateBaseCost(gamePrice, exchangeRate);
   const steamFeeAmount = calculateSteamFee(baseCost, steamFeePercent);
-  const steamCost = calculateSteamCost(baseCost, steamFeeAmount);
-  const paymentCharge = calculatePaymentCharge(steamCost, chargePer1000);
-  const finalCost = calculateFinalCost(steamCost, paymentCharge);
+  const steamCost = calculateSteamCost(baseCost, steamFeeAmount); // Card Amount
+  const bkashSendAmount = calculateBkashSendAmount(steamCost);
+  const paymentCharge = calculatePaymentCharge(bkashSendAmount, chargePer1000);
+  const finalCost = calculateFinalCost(bkashSendAmount, paymentCharge);
   const profit = calculateProfit(customerPrice, finalCost);
 
   return {
     baseCost: parseFloat(baseCost.toFixed(2)),
     steamFeeAmount: parseFloat(steamFeeAmount.toFixed(2)),
     steamCost: parseFloat(steamCost.toFixed(2)),
+    bkashSendAmount: parseFloat(bkashSendAmount.toFixed(2)),
     paymentCharge: parseFloat(paymentCharge.toFixed(2)),
     finalCost: parseFloat(finalCost.toFixed(2)),
     profit: parseFloat(profit.toFixed(2))

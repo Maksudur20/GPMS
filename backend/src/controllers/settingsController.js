@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma.js';
 import { comparePasswords } from '../utils/cryptography.js';
 
-const prisma = new PrismaClient();
 
 export const getSettings = async (req, res) => {
   try {
@@ -79,6 +78,10 @@ export const updateSettings = async (req, res) => {
         }
       });
     }
+
+    // Invalidate the cache in orderController so new settings apply immediately
+    const { settingsCache } = await import('./orderController.js');
+    if (settingsCache) settingsCache.data = null;
 
     res.json({
       message: 'Settings updated successfully',

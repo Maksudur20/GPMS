@@ -2,10 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { getSettings, updateSettings } from '../api/services.js';
 import { Card, Button } from '../components/Common.jsx';
 
+let cachedSettings = null;
+let cachedSettingsTime = 0;
+const CACHE_TTL = 30000;
+
 export const Settings = () => {
-  const [settings, setSettings] = useState(null);
-  const [formData, setFormData] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [settings, setSettings] = useState(cachedSettings);
+  const [formData, setFormData] = useState(cachedSettings || {});
+  const [loading, setLoading] = useState(!cachedSettings);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -14,11 +18,18 @@ export const Settings = () => {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      setLoading(true);
+      if (cachedSettings && Date.now() - cachedSettingsTime < CACHE_TTL) {
+        setLoading(false);
+        return;
+      }
+
+      if (!cachedSettings) setLoading(true);
       try {
         const response = await getSettings();
-        setSettings(response.data.settings);
-        setFormData(response.data.settings);
+        cachedSettings = response.data.settings;
+        cachedSettingsTime = Date.now();
+        setSettings(cachedSettings);
+        setFormData(cachedSettings);
       } catch (err) {
         setError('Failed to load settings');
       } finally {
@@ -56,7 +67,10 @@ export const Settings = () => {
     setPasswordError(null);
 
     try {
-      await updateSettings({ ...formData, password });
+      const response = await updateSettings({ ...formData, password });
+      cachedSettings = response.data.settings;
+      cachedSettingsTime = Date.now();
+      setSettings(cachedSettings);
       setSuccess(true);
       setShowPasswordModal(false);
       setPassword('');

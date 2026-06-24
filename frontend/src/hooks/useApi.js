@@ -1,47 +1,65 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getDashboardStats } from '../api/services.js';
 
+// Simple in-memory cache — survives component unmount/remount (page navigation)
+const cache = {
+  dashboard: null,
+  dashboardTime: 0,
+  TTL: 30000 // 30 seconds
+};
+
 export const useDashboard = () => {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState(cache.dashboard); // show cached immediately
+  const [loading, setLoading] = useState(!cache.dashboard);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const now = Date.now();
+    // Skip fetch if cache is fresh
+    if (cache.dashboard && now - cache.dashboardTime < cache.TTL) {
+      setStats(cache.dashboard);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+
     const fetchStats = async () => {
-      setLoading(true);
       try {
         const response = await getDashboardStats();
-        setStats(response.data.stats);
+        if (!cancelled) {
+          cache.dashboard = response.data.stats;
+          cache.dashboardTime = Date.now();
+          setStats(response.data.stats);
+        }
       } catch (err) {
-        setError(err.message);
+        if (!cancelled) setError(err.message);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchStats();
+    return () => { cancelled = true; };
   }, []);
 
   return { stats, loading, error };
 };
 
 export const useAuth = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
+  const [user, setUser] = useState(() => {
     const username = localStorage.getItem('username');
-    if (token && username) {
-      setUser({ username });
-    }
-  }, []);
+    return username ? { username } : null;
+  });
 
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
+    // Clear cache on logout
+    cache.dashboard = null;
     setUser(null);
   };
 
-  return { user, loading, logout };
+  return { user, logout };
 };
